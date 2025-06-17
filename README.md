@@ -1,1 +1,2 @@
 # ML-modelo-KCNQ
+Este repositorio contiene tanto el código como los datos utilizados para la realización del TFG 'Predicción de la patogenicidad de mutaciones contrasentido en genes KCNQ mediante modelos de aprendizaje automático'. También se incluyen tablas con los rendimientos de cada modelo y gráficas del rendimiento de los modelos en los procesos de selección de variables y ajuste de hiperparámetros.
