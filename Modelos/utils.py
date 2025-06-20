@@ -5,6 +5,14 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 
 def Data_Preprocess(dataKCNQ1,dataKCNQ2,dataKCNQ3,dataKCNQ4,dataKCNQ5):
+    # Añade las variables que le faltan a los datos de cada gen, añade una variable para identificar a que gen pertenece cada dato (mediante one-hot encoding) y escala las variables continuas mediante Z-score normalization
+    # Args:
+    #     dataKCNQi (pd.DataFrame): datos correspondientes al gen KCNQi
+    # 
+    # Returns:
+    #     Tuple[lista de pd.DataFrame, lista de pd.Series, pd.Index]: lista de 5 dataframes con features (uno por cada gen), lista de 5 series con la variable objetivo y index con nombres de las features
+
+    
     ##Primero se añaden las variables que indican a que gen corresponde cada dato, y se añaden las variables que le faltan a los datos de cada gen
     
     # dataKCNQ1['Channel']=1
@@ -104,6 +112,16 @@ def Data_Preprocess(dataKCNQ1,dataKCNQ2,dataKCNQ3,dataKCNQ4,dataKCNQ5):
 
 
 def KCNQ_Kfold(X,y,kfold):
+    # Aplica StratifiedKFold en los datos de cada gen por separado y luego los une, cada fold final tiene la misma proporción de datos de cada gen que el dataset original
+    # 
+    # Args:
+    #     X (lista de 5 pd.DataFrame): lista con las features de cada gen KCNQ
+    #     y (lista de 5 pd.Series): lista con la variable objetivo de cada gen KCNQ
+    #     kfold (int): Número de folds
+    # 
+    # Returns:
+    #     Tuple[lista de listas, lista de listas]: lista de kfold listas con las features de cada fold, lista de kfold listas con la variable objetivo de cada fold
+   
     skf=StratifiedKFold(n_splits=kfold)
     X1_cv=[]
     y1_cv=[]
@@ -140,14 +158,46 @@ def KCNQ_Kfold(X,y,kfold):
     return X_cv, y_cv
 
 def sensitivity(model, X, y):
+    # Calcula el valor de la sensibilidad
+
+    # Args:
+    #     model: Modelo entrenado
+    #     X (pd.DataFrame) : DataFrame con las features
+    #     y (pd.Series) : Serie con la variable objetivo
+    # Returns: 
+    #     float : Valor de la sensibilidad
+    
     cm=confusion_matrix(y, model.predict(X))
     sensitivity=cm[1,1]/(cm[1,1]+cm[1,0])
     return sensitivity   
 def specificity(model, X, y):
+    # Calcula el valor de la especificidad
+
+    # Args:
+    #     model: Modelo entrenado
+    #     X (pd.DataFrame) : DataFrame con las features
+    #     y (pd.Series) : Serie con la variable objetivo
+    # Returns: 
+    #     float : Valor de la especificidad
+    
     cm=confusion_matrix(y, model.predict(X))
     specificity=cm[0,0]/(cm[0,0]+cm[0,1])
     return specificity
 def evaluation_kfold(model, X, y,ite, kfold,sens,spec,roc,features):
+    # Toma arrays de dimensiones (6,kfold) con las métricas del modelo y los devuelve habiendoles añadido los valores correspondientes a la iteración actual
+    # Args:
+    #     model: Modelo entrenado, debe tener el atributo predict_proba
+    #     X (pd.DataFrame) : DataFrame con las features
+    #     y (pd.Series) : Serie con la variable objetivo
+    #     ite (int) : iteración del proceso de validación cruzada al que corresponden el modelo,X e y
+    #     kfold (int) : Número de folds del proceso de validación cruzada (número total de iteraciones)
+    #     sens (np.array) : array de dimensiones (6,kfold) para guardar en cada iteración los valores de sensibilidad del dataset total y de cada gen KCNQ
+    #     spec (np.array) : array de dimensiones (6,kfold) para guardar en cada iteración los valores de especificidad del dataset total y de cada gen KCNQ
+    #     roc (np.array : array de dimensiones (6,kfold) para guardar en cada iteración los valores de AUC_ROC del dataset total y de cada gen KCNQ
+    #     features (pd.Index) : Nombres de las features con las que ha sido entrenado el modelo
+    # Returns:
+    #     Tuple[np.array,np.array,np.array] : arrays de dimensiones (6,kfold) conteniendo los valores de sensibilidad, especificidad y AUC-ROC en ese orden
+    
     sens[0,ite]=sensitivity(model,X[features],y)
     spec[0,ite]=specificity(model,X[features],y)
     roc[0,ite]=roc_auc_score(y,model.predict_proba(X[features])[:,1])
